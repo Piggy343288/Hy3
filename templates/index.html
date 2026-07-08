@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hy3 Playground</title>
+  <style>
+    :root {
+      --bg: #0f1115; --panel: #171a21; --border: #262b36;
+      --accent: #6c8cff; --accent2: #44d29a; --text: #e6e9ef; --muted: #8b93a7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6;
+    }
+    header {
+      padding: 20px 28px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: baseline; gap: 14px;
+    }
+    header h1 { margin: 0; font-size: 20px; }
+    header .tag { font-size: 12px; color: var(--muted); }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 24px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab {
+      padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--panel); cursor: pointer; color: var(--muted); font-size: 14px;
+    }
+    .tab.active { color: #fff; border-color: var(--accent); background: #1c2233; }
+    .pane { display: none; }
+    .pane.active { display: block; }
+    textarea, input[type=text] {
+      width: 100%; background: var(--panel); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 12px; font-size: 14px;
+      font-family: inherit; resize: vertical;
+    }
+    button {
+      margin-top: 12px; background: var(--accent); color: #fff; border: 0;
+      padding: 10px 20px; border-radius: 8px; font-size: 14px; cursor: pointer;
+    }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 18px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+    .card h3 { margin: 0 0 8px; font-size: 14px; }
+    .card .mode { color: var(--accent2); font-size: 12px; }
+    .card pre { white-space: pre-wrap; word-break: break-word; font-size: 13px; margin: 0; color: var(--text); }
+    .card .meta { color: var(--muted); font-size: 11px; margin-top: 8px; }
+    .log { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-top: 14px; min-height: 120px; font-size: 13px; }
+    .ev { margin: 6px 0; }
+    .ev .k { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 11px; margin-right: 8px; }
+    .k.call { background: #3a2a12; color: #ffb454; }
+    .k.result { background: #123a2a; color: var(--accent2); }
+    .k.answer { background: #1c2233; color: var(--accent); }
+    .k.error { background: #3a1212; color: #ff6b6b; }
+    #stream { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-top: 14px; min-height: 140px; white-space: pre-wrap; }
+    .loading { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🧠 Hy3 Playground</h1>
+    <span class="tag">model: {{ model }} · base: {{ base_url }}</span>
+  </header>
+
+  <div class="wrap">
+    <div class="tabs">
+      <div class="tab active" data-pane="reason">推理模式对比</div>
+      <div class="tab" data-pane="tool">工具调用</div>
+      <div class="tab" data-pane="stream">流式对话</div>
+    </div>
+
+    <!-- Pane 1: Reasoning -->
+    <div class="pane active" id="reason">
+      <textarea id="reason-q" rows="3" placeholder="输入一个需要推理的问题，例如：一个水池进水管 6h 注满、出水管 8h 排空，同时开多久注满？">一个水池有一个进水管和一个出水管。单独开进水管 6 小时可以注满水池，单独开出水管 8 小时可以排空水池。如果同时打开两个水管，需要多少小时才能将水池注满？</textarea>
+      <button id="reason-btn" onclick="runReason()">三档模式对比</button>
+      <div class="cards" id="reason-cards">
+        <div class="card"><h3>no_think</h3><div class="mode">直接回答</div><pre class="loading">等待…</pre></div>
+        <div class="card"><h3>low</h3><div class="mode">快速思考</div><pre class="loading">等待…</pre></div>
+        <div class="card"><h3>high</h3><div class="mode">深度思考</div><pre class="loading">等待…</pre></div>
+      </div>
+    </div>
+
+    <!-- Pane 2: Tool Calling -->
+    <div class="pane" id="tool">
+      <input type="text" id="tool-q" placeholder="试一句：帮我算一下 (25+17)*3，再算 2024-01-01 到今天有多少天，并统计这句话的字数：今天天气真好" value="帮我算一下 (25+17)*3，再算 2024-01-01 到今天有多少天，并统计这句话的字数：今天天气真好">
+      <button id="tool-btn" onclick="runTool()">运行 Agent</button>
+      <div class="log" id="tool-log"><span class="loading">等待运行…</span></div>
+    </div>
+
+    <!-- Pane 3: Streaming -->
+    <div class="pane" id="stream">
+      <input type="text" id="stream-q" placeholder="输入任意问题" value="用 100 字介绍什么是大模型推理">
+      <button id="stream-btn" onclick="runStream()">开始流式输出</button>
+      <div id="stream"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+    document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.pane').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      $('#' + t.dataset.pane).classList.add('active');
+    });
+
+    async function runReason() {
+      const q = $('#reason-q').value.trim();
+      const btn = $('#reason-btn');
+      btn.disabled = true;
+      document.querySelectorAll('#reason-cards pre').forEach(p => { p.className = 'loading'; p.textContent = '生成中…'; });
+      const r = await fetch('/api/reason?q=' + encodeURIComponent(q)).then(r => r.json());
+      const map = { no_think: 0, low: 1, high: 2 };
+      for (const [m, i] of Object.entries(map)) {
+        const card = document.querySelectorAll('#reason-cards .card')[i];
+        const pre = card.querySelector('pre');
+        const res = r.results[m];
+        if (res && res.ok) {
+          pre.className = ''; pre.textContent = res.content;
+          const u = res.usage || {};
+          card.querySelector('.meta') || (() => {
+            const d = document.createElement('div'); d.className = 'meta'; card.appendChild(d);
+          })();
+          card.querySelector('.meta').textContent = `tokens: ${u.completion_tokens ?? '?'} · ${u.total_tokens ?? '?'} total`;
+        } else {
+          pre.className = 'loading'; pre.textContent = '错误: ' + (res?.error || 'unknown');
+        }
+      }
+      btn.disabled = false;
+    }
+
+    async function runTool() {
+      const q = $('#tool-q').value.trim();
+      const btn = $('#tool-btn');
+      const log = $('#tool-log');
+      btn.disabled = true; log.innerHTML = '<span class="loading">运行中…</span>';
+      const r = await fetch('/api/tool', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ q })
+      }).then(r => r.json());
+      log.innerHTML = '';
+      for (const ev of (r.events || [])) {
+        const d = document.createElement('div');
+        d.className = 'ev';
+        if (ev.type === 'call') {
+          d.innerHTML = `<span class="k call">CALL</span><b>${ev.name}</b> <code>${ev.args}</code>`;
+        } else if (ev.type === 'result') {
+          d.innerHTML = `<span class="k result">RESULT</span><b>${ev.name}</b> <code>${ev.content}</code>`;
+        } else if (ev.type === 'answer') {
+          d.innerHTML = `<span class="k answer">ANSWER</span> ${ev.content}`;
+        } else {
+          d.innerHTML = `<span class="k error">ERROR</span> ${ev.content}`;
+        }
+        log.appendChild(d);
+      }
+      btn.disabled = false;
+    }
+
+    async function runStream() {
+      const q = $('#stream-q').value.trim();
+      const box = $('#stream');
+      box.textContent = '';
+      const es = new EventSource('/api/chat?q=' + encodeURIComponent(q));
+      es.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.content) box.textContent += data.content;
+        if (data.error) { box.textContent += '\n[错误] ' + data.error; es.close(); }
+        if (e.data.includes('[DONE]')) es.close();
+      };
+    }
+  </script>
+</body>
+</html>
