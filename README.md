@@ -36,14 +36,15 @@ pip install -e .
 
 ### 客户端配置
 
-#### Cline
+#### CodeBuddy
 
-打开 Cline → MCP Server 设置，添加：
+CodeBuddy 支持项目级 MCP 配置。在项目根目录创建 `.codebuddy/mcp.json`：
 
 ```json
 {
-  "mcpServers": {
-    "hy3-code-review": {
+  "mcp_servers": [
+    {
+      "name": "hy3-code-review",
       "command": "hy3-code-review",
       "env": {
         "HY3_BASE_URL": "http://127.0.0.1:8000/v1",
@@ -51,11 +52,15 @@ pip install -e .
         "HY3_MODEL": "hy3"
       }
     }
-  }
+  ]
 }
 ```
 
-或添加到项目 `.vscode/mcp.json`：
+添加后重启 CodeBuddy，即可在 Chat 中调用 Hy3 进行代码审查。
+
+#### Cline / Roo Code
+
+在 VS Code 的项目 `.vscode/mcp.json` 中添加：
 
 ```json
 {
