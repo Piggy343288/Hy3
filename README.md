@@ -16,20 +16,12 @@
 
 ## 安装
 
-### 方式一：pip 本地安装
-
 ```bash
 git clone https://github.com/Piggy343288/Hy3.git
 cd Hy3
 git checkout hy3-mcp-server
 cd hy3-mcp-server
 pip install -e .
-```
-
-### 方式二：直接安装
-
-```bash
-pip install hy3-code-review
 ```
 
 ## 配置
