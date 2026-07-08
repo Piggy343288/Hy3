@@ -152,13 +152,19 @@ def process(items):
 
 ## 验证
 
-```bash
-# 启动 MCP Inspector（调试工具）
-npx @modelcontextprotocol/inspector hy3-code-review
+### 集成测试（推荐 — mock Hy3 API，无需真实部署）
 
-# 或直接运行
-hy3-code-review
-# 然后通过 MCP 客户端连接
+```bash
+cd hy3-mcp-server
+python scripts/test_mcp.py
+```
+
+测试流程：启动 mock Hy3 API → 启动 MCP server → 初始化 → 列出 3 个 tools → 调用 `explain_refactor` → 调用 `review_file`。
+
+### MCP Inspector
+
+```bash
+npx @modelcontextprotocol/inspector hy3-code-review
 ```
 
 ## 项目结构
@@ -167,14 +173,25 @@ hy3-code-review
 hy3-mcp-server/
 ├── pyproject.toml           # 打包配置
 ├── README.md
-├── src/
-│   └── hy3_code_review/
-│       ├── __init__.py
-│       ├── __main__.py      # 入口
-│       ├── server.py         # MCP Server 实现（3 tools）
-│       └── hy3_client.py     # Hy3 API 封装
+├── pyproject.toml           # 打包配置
+├── scripts/
+│   └── test_mcp.py          # 集成测试（mock Hy3 + MCP 协议验证）
+└── src/
+    └── hy3_code_review/
+        ├── __init__.py
+        ├── __main__.py      # 入口
+        ├── server.py         # MCP Server 实现（3 tools）
+        └── hy3_client.py     # Hy3 API 封装
 ```
+
+## 已验证的 MCP 客户端
+
+| 客户端 | 状态 | 配置方式 |
+|--------|------|----------|
+| CodeBuddy (CLI v2.117.2) | ✅ | `codebuddy mcp add hy3-code-review hy3-code-review` |
+| Cline (VS Code v4.0.6) | ✅ | `%APPDATA%/.../cline_mcp_settings.json` |
+| Roo Code (VS Code v3.54.0) | ✅ | 同 Cline 格式，`.vscode/mcp.json` |
 
 ## Demo
 
-> 录制 ≤ 1 min 的 demo 视频 / GIF 放入 `media/` 目录。
+> 录制 ≤ 1 min 的 demo 视频 / GIF 放入 `media/` 目录，展示在 CodeBuddy 或 Cline 中实际调用 Server 的过程。
