@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hy3-code-review"
+version = "0.1.0"
+description = "MCP Server for code review powered by Hy3"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "hy3-contributor" },
+]
+dependencies = [
+    "mcp>=1.0",
+    "openai>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Piggy343288/Hy3/tree/hy3-mcp-server"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+hy3-code-review = "hy3_code_review.__main__:main"
