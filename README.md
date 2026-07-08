@@ -56,6 +56,37 @@ CodeBuddy 支持项目级 MCP 配置。在项目根目录创建 `.codebuddy/mcp.
 }
 ```
 
+或通过 CLI 添加（已验证 CodeBuddy CLI v2.117.2）：
+
+```bash
+# 本地部署的 Hy3
+codebuddy mcp add hy3-code-review hy3-code-review
+# 然后编辑 %USERPROFILE%\.codebuddy.json 添加 env 字段
+```
+
+编辑后 `.codebuddy.json` 中的 MCP Server 配置如下：
+
+```json
+{
+  "projects": {
+    "YOUR_PROJECT_PATH": {
+      "mcpServers": {
+        "hy3-code-review": {
+          "type": "stdio",
+          "command": "hy3-code-review",
+          "args": [],
+          "env": {
+            "HY3_BASE_URL": "http://127.0.0.1:8000/v1",
+            "HY3_API_KEY": "EMPTY",
+            "HY3_MODEL": "hy3"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
 添加后重启 CodeBuddy，即可在 Chat 中调用 Hy3 进行代码审查。
 
 #### Cline / Roo Code
